@@ -1,6 +1,6 @@
 {
   "name": "nuxt-feedback-pins",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Visual feedback pins for Nuxt prototypes — let clients comment directly on the page, Figma-style.",
   "repository": {
     "type": "git",
