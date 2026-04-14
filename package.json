@@ -1,0 +1,54 @@
+{
+  "name": "nuxt-feedback-pins",
+  "version": "0.1.0",
+  "description": "Visual feedback pins for Nuxt prototypes — let clients comment directly on the page, Figma-style.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wspitz/nuxt-feedback-pins.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wspitz/nuxt-feedback-pins/issues"
+  },
+  "homepage": "https://github.com/wspitz/nuxt-feedback-pins#readme",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/module.mjs"
+    }
+  },
+  "main": "./dist/module.mjs",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepack": "nuxt-module-build build",
+    "dev": "nuxi dev playground",
+    "dev:build": "nuxi build playground",
+    "dev:prepare": "nuxt-module-build build --stub && nuxi prepare playground",
+    "build": "nuxt-module-build build"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^3.16.0",
+    "defu": "^6.1.4"
+  },
+  "devDependencies": {
+    "@nuxt/module-builder": "^1.0.2",
+    "nuxt": "^3.16.0",
+    "typescript": "^5.7.0",
+    "unbuild": "^3.5.0",
+    "vue-tsc": "^2.2.0"
+  },
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "feedback",
+    "comments",
+    "pins",
+    "prototype",
+    "review",
+    "collaboration"
+  ],
+  "author": "POINTED. Digital Services GmbH <office@pointed.at>"
+}
