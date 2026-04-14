@@ -31,11 +31,11 @@
 /* ---- Overlay (for pin placement mode) ---- */
 
 .__fp-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   z-index: var(--fp-z-overlay);
   pointer-events: none;
 }
@@ -65,13 +65,15 @@
 /* ---- Pin Layer ---- */
 
 .__fp-pin-layer {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   z-index: var(--fp-z-pins);
   pointer-events: none;
+  overflow: visible;
+  will-change: transform;
 }
 
 /* ---- Pin Wrapper ---- */

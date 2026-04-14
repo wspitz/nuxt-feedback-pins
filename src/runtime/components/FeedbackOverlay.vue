@@ -5,7 +5,6 @@
       v-if="isAuthenticated && feedbackMode"
       class="__fp-overlay"
       :class="{ '__fp-overlay-placing': isPlacing }"
-      :style="docSizeStyle"
       @click="handleOverlayClick"
     >
       <!-- Placing indicator -->
@@ -15,13 +14,15 @@
     </div>
 
     <!-- Pin layer (always visible when authenticated, under the overlay) -->
-    <div v-if="isAuthenticated" class="__fp-pin-layer" :style="docSizeStyle">
+    <div v-if="isAuthenticated" class="__fp-pin-layer" :style="pinLayerStyle">
       <FeedbackPin
         v-for="(pin, idx) in visiblePins"
         :key="pin.id"
         :pin="pin"
         :number="idx + 1"
         :is-active="activePin === pin.id"
+        :doc-width="docWidth"
+        :doc-height="docHeight"
         @toggle="togglePin(pin.id)"
         @reply="(text) => handleReply(pin.id, text)"
         @resolve="resolvePin(pin.id)"
@@ -33,7 +34,10 @@
       <div
         v-if="newPinPos"
         class="__fp-pin-wrapper __fp-pin-new"
-        :style="{ left: newPinPos.x + '%', top: newPinPos.y + '%' }"
+        :style="{
+          left: (newPinPos.x * docWidth / 100) + 'px',
+          top: (newPinPos.y * docHeight / 100) + 'px',
+        }"
       >
         <div class="__fp-pin-marker __fp-pin-marker-new">
           <span class="__fp-pin-number">+</span>
@@ -137,10 +141,11 @@ const isPlacing = ref(false)
 const newPinPos = ref<{ x: number; y: number } | null>(null)
 const docWidth = ref(0)
 const docHeight = ref(0)
+const scrollX = ref(0)
+const scrollY = ref(0)
 
-const docSizeStyle = computed(() => ({
-  width: docWidth.value ? `${docWidth.value}px` : '100%',
-  height: docHeight.value ? `${docHeight.value}px` : '100%',
+const pinLayerStyle = computed(() => ({
+  transform: `translate(${-scrollX.value}px, ${-scrollY.value}px)`,
 }))
 
 let resizeObserver: ResizeObserver | null = null
@@ -149,6 +154,11 @@ function measureDoc() {
   const el = document.documentElement
   docWidth.value = Math.max(el.scrollWidth, el.clientWidth)
   docHeight.value = Math.max(el.scrollHeight, el.clientHeight)
+}
+
+function measureScroll() {
+  scrollX.value = window.scrollX || window.pageXOffset || 0
+  scrollY.value = window.scrollY || window.pageYOffset || 0
 }
 
 const visiblePins = computed(() => {
@@ -183,7 +193,9 @@ onMounted(async () => {
   if (!enabled) return
 
   measureDoc()
+  measureScroll()
   window.addEventListener('resize', measureDoc)
+  window.addEventListener('scroll', measureScroll, { passive: true })
   window.addEventListener('keydown', handleKeydown)
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(measureDoc)
@@ -200,6 +212,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', measureDoc)
+  window.removeEventListener('scroll', measureScroll)
   window.removeEventListener('keydown', handleKeydown)
   resizeObserver?.disconnect()
   resizeObserver = null

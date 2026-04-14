@@ -6,8 +6,8 @@
       '__fp-pin-active': isActive,
     }"
     :style="{
-      left: pin.x + '%',
-      top: pin.y + '%',
+      left: (pin.x * docWidth / 100) + 'px',
+      top: (pin.y * docHeight / 100) + 'px',
     }"
   >
     <!-- Pin Marker -->
@@ -46,6 +46,8 @@ defineProps<{
   pin: FeedbackPin
   number: number
   isActive: boolean
+  docWidth: number
+  docHeight: number
 }>()
 
 defineEmits<{
