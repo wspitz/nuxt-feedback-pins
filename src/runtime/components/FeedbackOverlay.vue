@@ -5,6 +5,7 @@
       v-if="isAuthenticated && feedbackMode"
       class="__fp-overlay"
       :class="{ '__fp-overlay-placing': isPlacing }"
+      :style="docSizeStyle"
       @click="handleOverlayClick"
     >
       <!-- Placing indicator -->
@@ -14,7 +15,7 @@
     </div>
 
     <!-- Pin layer (always visible when authenticated, under the overlay) -->
-    <div v-if="isAuthenticated" class="__fp-pin-layer">
+    <div v-if="isAuthenticated" class="__fp-pin-layer" :style="docSizeStyle">
       <FeedbackPin
         v-for="(pin, idx) in visiblePins"
         :key="pin.id"
@@ -134,6 +135,21 @@ const showLogin = ref(false)
 const showMenu = ref(false)
 const isPlacing = ref(false)
 const newPinPos = ref<{ x: number; y: number } | null>(null)
+const docWidth = ref(0)
+const docHeight = ref(0)
+
+const docSizeStyle = computed(() => ({
+  width: docWidth.value ? `${docWidth.value}px` : '100%',
+  height: docHeight.value ? `${docHeight.value}px` : '100%',
+}))
+
+let resizeObserver: ResizeObserver | null = null
+
+function measureDoc() {
+  const el = document.documentElement
+  docWidth.value = Math.max(el.scrollWidth, el.clientWidth)
+  docHeight.value = Math.max(el.scrollHeight, el.clientHeight)
+}
 
 const visiblePins = computed(() => {
   if (showResolved.value) return pins.value
@@ -164,17 +180,29 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 onMounted(async () => {
-  if (enabled) {
-    const authed = await checkAuth()
-    if (authed) {
-      await loadPins()
-    }
-    window.addEventListener('keydown', handleKeydown)
+  if (!enabled) return
+
+  measureDoc()
+  window.addEventListener('resize', measureDoc)
+  window.addEventListener('keydown', handleKeydown)
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(measureDoc)
+    resizeObserver.observe(document.documentElement)
+    resizeObserver.observe(document.body)
   }
+
+  const authed = await checkAuth()
+  if (authed) {
+    await loadPins()
+  }
+  measureDoc()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureDoc)
   window.removeEventListener('keydown', handleKeydown)
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 
 function handleFabClick() {
