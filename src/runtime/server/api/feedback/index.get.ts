@@ -1,7 +1,7 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { isAuthenticated, readFeedbackFile, sanitizeRoute } from '../../utils/storage'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   if (!isAuthenticated(event)) {
     throw createError({ statusCode: 401, statusMessage: 'Not authenticated' })
   }
@@ -11,5 +11,5 @@ export default defineEventHandler((event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid or missing route parameter' })
   }
 
-  return readFeedbackFile(route)
+  return await readFeedbackFile(route)
 })

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing required fields: route, pinId, action' })
   }
 
-  const data = readFeedbackFile(route)
+  const data = await readFeedbackFile(route)
   const pinIndex = data.pins.findIndex(p => p.id === body.pinId)
 
   if (pinIndex === -1) {
@@ -52,6 +52,6 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: `Unknown action: ${body.action}` })
   }
 
-  writeFeedbackFile(data)
+  await writeFeedbackFile(data)
   return body.action === 'delete' ? { deleted: true } : pin
 })

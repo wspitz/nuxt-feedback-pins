@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
   const author = clampText(body.author, 80, 'Gast')
 
-  const data = readFeedbackFile(route)
+  const data = await readFeedbackFile(route)
 
   if (data.pins.length >= maxPins) {
     throw createError({ statusCode: 429, statusMessage: `Maximum of ${maxPins} pins per page reached` })
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
   }
 
   data.pins.push(pin)
-  writeFeedbackFile(data)
+  await writeFeedbackFile(data)
 
   return pin
 })

@@ -51,8 +51,11 @@ export default defineNuxtConfig({
     // Required: shared password for client access
     password: 'your-secret-password',
 
-    // Where to store feedback JSON files (default: ./feedback-data)
+    // Local dev: directory for JSON files (default: ./feedback-data)
     storagePath: './feedback-data',
+
+    // Optional: override the storage driver (see "Storage" section below)
+    // storage: { driver: 'vercelKV' },
 
     // Enable/disable the module (default: true)
     enabled: true,
@@ -86,7 +89,15 @@ export default defineNuxtConfig({
 
 ### Storage
 
-Comments are stored as JSON files in `./feedback-data/` (configurable), one file per route:
+Under the hood, the module uses [Nitro's unstorage](https://unstorage.unjs.io/)
+to persist pins. The storage layer is pluggable — out of the box it writes JSON
+files to `./feedback-data/`, but you can swap in any unstorage driver (Vercel
+KV, Upstash Redis, Cloudflare KV, S3, …) for serverless hosts.
+
+#### Local development (default)
+
+Nothing to configure. Pins land in `./feedback-data/` as JSON files, one per
+route:
 
 ```
 feedback-data/
@@ -96,6 +107,55 @@ feedback-data/
 ```
 
 These files are human-readable and can be committed to Git for reference.
+
+#### Deploying to Vercel (Vercel KV)
+
+Serverless filesystems are ephemeral — you **must** switch to a persistent
+backend. The easiest option on Vercel is **Vercel KV** (Redis under the hood):
+
+1. **Create a KV database** in your Vercel project:
+   Dashboard → Storage → Create Database → KV → link it to your project.
+   Vercel automatically injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+   environment variables into your deployment.
+
+2. **Point the module at it** in `nuxt.config.ts`:
+
+   ```ts
+   export default defineNuxtConfig({
+     modules: ['nuxt-feedback-pins'],
+     feedbackPins: {
+       password: process.env.FEEDBACK_PASSWORD,
+       storage: { driver: 'vercelKV' },
+     },
+   })
+   ```
+
+3. Deploy. Pins now persist in Vercel KV and survive cold starts.
+
+#### Deploying anywhere else (Upstash Redis)
+
+For Netlify, Cloudflare, self-hosted Node, or anything else, **Upstash Redis**
+is the universal choice — free tier, two env vars, works everywhere:
+
+1. Sign up at [upstash.com](https://upstash.com/), create a Redis database,
+   and copy `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` into your
+   host's environment variables.
+
+2. Configure the module:
+
+   ```ts
+   feedbackPins: {
+     password: process.env.FEEDBACK_PASSWORD,
+     storage: {
+       driver: 'upstash',
+       url: process.env.UPSTASH_REDIS_REST_URL,
+       token: process.env.UPSTASH_REDIS_REST_TOKEN,
+     },
+   }
+   ```
+
+Any other [unstorage driver](https://unstorage.unjs.io/drivers) works the same
+way — just pass its config under `storage`.
 
 ### Removing for Production
 
@@ -156,10 +216,11 @@ public-facing production sites.** Please keep the following in mind:
 - **Sessions are kept in memory** on the Nuxt/Nitro server. A server
   restart logs everyone out. In multi-instance setups you need sticky
   sessions (or don't use this module).
-- **Storage is a flat-file JSON directory** on the server's filesystem.
-  That means it only works in environments where the server process can
-  write to disk (local dev, self-hosted Node, Docker with a volume).
-  Serverless platforms like Vercel or Netlify won't persist the files.
+- **Storage is pluggable via Nitro unstorage.** The default driver writes
+  JSON files to disk — fine for local dev, self-hosted Node, or Docker
+  with a volume. For serverless platforms (Vercel, Netlify, Cloudflare)
+  you must configure a cloud driver (e.g. Vercel KV, Upstash Redis). See
+  the *Storage* section above.
 - Login attempts are rate-limited (10 / minute / IP) and the password is
   compared in constant time, but there is no account lockout, no audit
   log, and no encryption-at-rest for the stored comments. Treat the

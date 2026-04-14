@@ -1,8 +1,16 @@
-import { resolve } from 'path'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { randomBytes, timingSafeEqual } from 'crypto'
 import type { H3Event } from 'h3'
-import { useRuntimeConfig, getCookie } from '#imports'
+import { useRuntimeConfig, useStorage, getCookie } from '#imports'
+
+const STORAGE_MOUNT = 'feedback'
+
+function feedbackStorage() {
+  return useStorage(STORAGE_MOUNT)
+}
+
+function storageKey(route: string): string {
+  return `${routeToFilename(route)}.json`
+}
 
 const MAX_SESSIONS = 500
 const sessions = new Map<string, number>()
@@ -114,47 +122,21 @@ export function routeToFilename(route: string): string {
     .replace(/[^a-zA-Z0-9\-_]/g, '_')
 }
 
-/**
- * Get the storage directory path, ensuring it exists
- */
-export function getStorageDir(): string {
-  const config = useRuntimeConfig()
-  const storagePath = (config.feedbackPins as Record<string, unknown>)?.storagePath as string || './feedback-data'
-  const dir = resolve(process.cwd(), storagePath)
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
-  return dir
-}
-
-/**
- * Read feedback data for a specific route
- */
-export function readFeedbackFile(route: string): FeedbackPage {
-  const dir = getStorageDir()
-  const filename = routeToFilename(route)
-  const filepath = resolve(dir, `${filename}.json`)
-
-  if (!existsSync(filepath)) {
-    return { route, pins: [] }
-  }
-
+export async function readFeedbackFile(route: string): Promise<FeedbackPage> {
   try {
-    const raw = readFileSync(filepath, 'utf-8')
-    return JSON.parse(raw) as FeedbackPage
-  } catch {
-    return { route, pins: [] }
+    const data = await feedbackStorage().getItem<FeedbackPage>(storageKey(route))
+    if (data && typeof data === 'object' && Array.isArray((data as FeedbackPage).pins)) {
+      return data as FeedbackPage
+    }
   }
+  catch (err) {
+    console.error('[nuxt-feedback-pins] Failed to read storage:', err)
+  }
+  return { route, pins: [] }
 }
 
-/**
- * Write feedback data for a specific route
- */
-export function writeFeedbackFile(data: FeedbackPage): void {
-  const dir = getStorageDir()
-  const filename = routeToFilename(data.route)
-  const filepath = resolve(dir, `${filename}.json`)
-  writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf-8')
+export async function writeFeedbackFile(data: FeedbackPage): Promise<void> {
+  await feedbackStorage().setItem(storageKey(data.route), data)
 }
 
 export function isAuthenticated(event: H3Event): boolean {

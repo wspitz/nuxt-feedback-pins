@@ -1,3 +1,4 @@
+import { resolve as resolvePath } from 'path'
 import { defineNuxtModule, addPlugin, addServerHandler, createResolver, addImportsDir } from '@nuxt/kit'
 import { defu } from 'defu'
 import type { FeedbackPinsOptions } from './types'
@@ -36,7 +37,6 @@ export default defineNuxtModule<FeedbackPinsOptions>({
       nuxt.options.runtimeConfig.feedbackPins as Record<string, unknown> || {},
       {
         password: options.password,
-        storagePath: options.storagePath,
         maxPinsPerPage: options.maxPinsPerPage,
         cookieName: options.cookieName,
         sessionDuration: options.sessionDuration,
@@ -52,6 +52,23 @@ export default defineNuxtModule<FeedbackPinsOptions>({
         defaultAuthor: options.defaultAuthor,
       }
     )
+
+    // Register Nitro unstorage mountpoint `feedback`.
+    // Default: local filesystem at `storagePath` (good for dev).
+    // Override: user can pass any unstorage driver via `feedbackPins.storage`
+    // in nuxt.config (e.g. vercelKV, redis, s3) — defu preserves their value.
+    const defaultStorage = options.storage || {
+      driver: 'fs',
+      base: resolvePath(nuxt.options.rootDir, options.storagePath || './feedback-data'),
+    }
+    nuxt.options.nitro = defu(nuxt.options.nitro, {
+      storage: {
+        feedback: defaultStorage,
+      },
+      devStorage: {
+        feedback: defaultStorage,
+      },
+    })
 
     // Add client-only plugin
     addPlugin({

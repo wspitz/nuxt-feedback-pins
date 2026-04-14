@@ -1,8 +1,23 @@
+export interface FeedbackStorageConfig {
+  driver: string
+  [key: string]: unknown
+}
+
 export interface FeedbackPinsOptions {
   /** Shared password for client access */
   password: string
-  /** Directory for JSON storage files (default: ./feedback-data) */
+  /**
+   * Directory for local JSON storage files (default: ./feedback-data).
+   * Only used when `storage` is not set. Ignored on serverless targets.
+   */
   storagePath?: string
+  /**
+   * Nitro unstorage driver config. Overrides the default local-filesystem
+   * storage. Use this to point the module at Vercel KV, Upstash Redis,
+   * Cloudflare KV, S3, etc. Example:
+   *   storage: { driver: 'vercelKV' }
+   */
+  storage?: FeedbackStorageConfig
   /** Enable/disable the module (default: true) */
   enabled?: boolean
   /** Accent color for pins and UI (default: #FF6B35) */
