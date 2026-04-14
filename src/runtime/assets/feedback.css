@@ -5,8 +5,8 @@
 
 :root {
   --fp-accent: #FF6B35;
-  --fp-accent-hover: #E85A24;
-  --fp-accent-light: #FFF3ED;
+  --fp-accent-hover: color-mix(in srgb, var(--fp-accent) 85%, #000);
+  --fp-accent-light: color-mix(in srgb, var(--fp-accent) 12%, #fff);
   --fp-bg: #FFFFFF;
   --fp-bg-elevated: #FAFAFA;
   --fp-border: #E5E5E5;

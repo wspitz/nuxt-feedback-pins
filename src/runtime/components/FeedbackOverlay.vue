@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRuntimeConfig } from '#imports'
 import { useFeedback } from '../composables/useFeedback'
 import { useFeedbackAuth } from '../composables/useFeedbackAuth'
@@ -144,13 +144,37 @@ const unresolvedCount = computed(() => {
   return pins.value.filter(p => !p.resolved).length
 })
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  if (showLogin.value) return
+  if (newPinPos.value) {
+    newPinPos.value = null
+    isPlacing.value = feedbackMode.value
+    return
+  }
+  if (feedbackMode.value) {
+    feedbackMode.value = false
+    isPlacing.value = false
+    showMenu.value = false
+    activePin.value = null
+  }
+  else if (activePin.value) {
+    activePin.value = null
+  }
+}
+
 onMounted(async () => {
   if (enabled) {
     const authed = await checkAuth()
     if (authed) {
       await loadPins()
     }
+    window.addEventListener('keydown', handleKeydown)
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 function handleFabClick() {
